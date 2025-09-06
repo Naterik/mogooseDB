@@ -1,12 +1,21 @@
 const Customer = require("../models/customer");
-const { postCreateCustomer, createBulkCustomer, updateCustomer, deleteOneCustomer } = require("../services/customer.services");
+const { postCreateCustomer, createBulkCustomer, updateCustomer, deleteOneCustomer, deleteManyCustomers, getAllCustomer, getCustomersWithPaginate } = require("../services/customer.services");
 const { uploadSingleFile, uploadMultipleFilesName } = require("../services/file.services");
 
 const getAllCustomerAPI=async(req,res)=>{
-    const customer=await Customer.find({});
-    return res.status(200).json({
-        data:customer
-    })
+   
+    try{
+        const {limit,page}=req.query
+        const customer=await getCustomersWithPaginate(limit,page,req.query);
+        return res.status(200).json({
+            data:customer
+        })
+    }catch(err){
+        return res.status(400).json({
+            message:err.message
+        })
+    }
+    
 }
 const postCreateCustomerAPI=async(req,res)=>{
     const {name,address,phone,email,description}=req.body
@@ -73,6 +82,30 @@ const deleteACustomer=async(req,res)=>{
     }
 }
 
+const deleteCustomers=async(req,res)=>{
+    try{
+       const {customerIds}=req.body
+       if(Array.isArray(customerIds)){
+        const deleteCustomers=await deleteManyCustomers(customerIds)
+        return res.status(200).json({
+            EC:0,
+            data:deleteCustomers
+        })
+       }
+       return  await deleteACustomer(req,res)
+       
+    }catch(err){
+         return res.status(400).json({
+            EC:1,
+            message:err.message
+    })
+    }
+}
+
+
+
+
+
 const uploadFile=async(req, res)=>{  
   if (!req.files || Object.keys(req.files).length === 0) {
     return res.status(400).send('No files were uploaded.');
@@ -101,5 +134,5 @@ const upLoadMultipleFiles=async(req,res)=>{
   }
 }
 module.exports={
-    getAllCustomerAPI,postCreateCustomerAPI,uploadFile,upLoadMultipleFiles,postCreateBulkCustomer,putUpdateCustomer,deleteACustomer
+    getAllCustomerAPI,postCreateCustomerAPI,uploadFile,upLoadMultipleFiles,postCreateBulkCustomer,putUpdateCustomer,deleteACustomer,deleteCustomers
 }
