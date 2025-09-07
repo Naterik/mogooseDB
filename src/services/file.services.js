@@ -2,8 +2,8 @@ var path = require('path');
 
 const uploadSingleFile=async(fileObject)=>{
   let uploadPath =  path.resolve(__dirname, '../public/img/');
-  const exName=path.extname(fileObject.name)
-  let baseName=path.basename(fileObject.name,exName);
+  const exName=path.extname(fileObject?.name)
+  let baseName=path.basename(fileObject?.name,exName);
   const finalName=`${baseName}-${Date.now()}${exName}`
   const finalPath=`${uploadPath}/${finalName}`
 

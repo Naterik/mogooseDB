@@ -36,8 +36,8 @@ const getCustomersWithPaginate=async(limit,page,queryString)=>{
 //     }
 // }
 const postCreateCustomer=async(createData)=>{
-    const { name,address,phone,email,description,image}=createData;
-    return await Customer.create({name,address,phone,email,description,image})
+    
+    return await Customer.create({...createData})
 }
 const createBulkCustomer =async(customers)=>{
     return await Customer.insertMany(customers)
