@@ -1,28 +1,67 @@
 const Customer = require("../models/customer");
-const { postCreateCustomer, createBulkCustomer, updateCustomer, deleteOneCustomer } = require("../services/customer.services");
+const { postCreateCustomer, createBulkCustomer, updateCustomer, deleteOneCustomer, deleteManyCustomers, getAllCustomer, getCustomersWithPaginate } = require("../services/customer.services");
 const { uploadSingleFile, uploadMultipleFilesName } = require("../services/file.services");
-
+const Joi = require('joi');
 const getAllCustomerAPI=async(req,res)=>{
-    const customer=await Customer.find({});
-    return res.status(200).json({
-        data:customer
-    })
+   
+    try{
+        const {limit,page}=req.query
+        const customer=await getCustomersWithPaginate(limit,page,req.query);
+        return res.status(200).json({
+            data:customer
+        })
+    }catch(err){
+        return res.status(400).json({
+            message:err.message
+        })
+    }
+    
 }
 const postCreateCustomerAPI=async(req,res)=>{
     const {name,address,phone,email,description}=req.body
-      if (!req.files || Object.keys(req.files).length === 0) {
-    return res.status(400).send('No files were uploaded.');
+    const schema = Joi.object({
+    name: Joi.string()
+        .alphanum()
+        .min(3)
+        .max(30)
+        .required(),
+    address:Joi.string(),
+    phone: Joi.string()
+        .pattern(new RegExp('^[0-9]{3,10}$')),
+     email: Joi.string().email(),
+    description: Joi.string()
+        .min(5)
+        .max(2013),
+})
+
+const {error}=schema.validate(req.body)
+if(error){
+    return res.status(400).json({
+            EC:1,
+            message:error
+        })
+}
+let image=null
+if(req.files){
+    const file=await uploadSingleFile(req?.files?.image)
+     image=file.path
+   
+}
+ const createData={
+    name,address,phone,email,description, ...(image&&{image})
   }
-  const file=await uploadSingleFile(req?.files?.image)
-  const image=file.path
-  const createData={
-    name,address,phone,email,description,image
-  }
-    const createCustomer=await postCreateCustomer(createData);
+  try{
+  const createCustomer=await postCreateCustomer(createData);
     return res.status(200).json({
         EC:0,
         data:createCustomer
     })
+  }catch(err){
+return res.status(400).json({
+        EC:1,
+        message:err.message
+    })
+  }
 }
 
 const postCreateBulkCustomer=async(req,res)=>{
@@ -73,6 +112,30 @@ const deleteACustomer=async(req,res)=>{
     }
 }
 
+const deleteCustomers=async(req,res)=>{
+    try{
+       const {customerIds}=req.body
+       if(Array.isArray(customerIds)){
+        const deleteCustomers=await deleteManyCustomers(customerIds)
+        return res.status(200).json({
+            EC:0,
+            data:deleteCustomers
+        })
+       }
+       return  await deleteACustomer(req,res)
+       
+    }catch(err){
+         return res.status(400).json({
+            EC:1,
+            message:err.message
+    })
+    }
+}
+
+
+
+
+
 const uploadFile=async(req, res)=>{  
   if (!req.files || Object.keys(req.files).length === 0) {
     return res.status(400).send('No files were uploaded.');
@@ -101,5 +164,5 @@ const upLoadMultipleFiles=async(req,res)=>{
   }
 }
 module.exports={
-    getAllCustomerAPI,postCreateCustomerAPI,uploadFile,upLoadMultipleFiles,postCreateBulkCustomer,putUpdateCustomer,deleteACustomer
+    getAllCustomerAPI,postCreateCustomerAPI,uploadFile,upLoadMultipleFiles,postCreateBulkCustomer,putUpdateCustomer,deleteACustomer,deleteCustomers
 }
