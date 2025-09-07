@@ -18,7 +18,7 @@ app.use(fileUpload({
 }));
 
 apiRouter(app);
-// webRouter(app);
+webRouter(app);
     const url = process.env.DB_HOST_WITH_DRIVER;
 const client = new MongoClient(url);
 const dbName = process.env.DB_NAME;
